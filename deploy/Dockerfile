@@ -1,9 +1,6 @@
 # Base image
 FROM node:18
 
-# Define a non-root user with root group (gid 0)
-RUN groupadd -r appgroup && useradd -r -g appgroup -d /app -s /sbin/nologin appuser
-
 # Set the working directory
 WORKDIR /app
 
@@ -12,11 +9,8 @@ COPY backend ./backend
 COPY frontend ./frontend
 COPY deploy ./deploy
 
-# Ensure /app/data directory exists and set proper permissions for OpenShift's random user uid with gid 0
-RUN mkdir -p /app/data && chown -R appuser:0 /app && chmod -R g+rw /app
-
-# Switch to the non-root user
-USER appuser
+# Ensure /app/data directory exists and set proper permissions
+RUN mkdir -p /app/data && chmod -R 777 /app
 
 # Install dependencies and build the app
 RUN cd frontend && \
