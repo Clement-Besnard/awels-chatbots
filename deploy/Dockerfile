@@ -12,8 +12,8 @@ COPY backend ./backend
 COPY frontend ./frontend
 COPY deploy ./deploy
 
-# Fix permissions for OpenShift's random user uid with gid 0
-RUN chown -R appuser:0 /app && chmod -R g+rw /app
+# Ensure /app/data directory exists and set proper permissions for OpenShift's random user uid with gid 0
+RUN mkdir -p /app/data && chown -R appuser:0 /app && chmod -R g+rw /app
 
 # Switch to the non-root user
 USER appuser
@@ -23,6 +23,7 @@ RUN cd frontend && \
     npm install -D tailwindcss postcss autoprefixer && \
     npx tailwindcss init && \
     npm run build
+
 RUN cd backend && \
     ln -s ../frontend/ frontend && \
     npm install --production
