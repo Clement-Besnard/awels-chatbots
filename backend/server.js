@@ -9,13 +9,18 @@ const FileStore = require('session-file-store')(session);
 const app = express();
 const PORT = 3001;
 
-const AUTH_FILE = path.join(__dirname, '/auth/auth.json');
+// Use the HOME environment variable to set the auth file location dynamically
+const AUTH_FILE = path.join(process.env.HOME || __dirname, 'auth/auth.json');
+const SESSIONS_PATH = path.join(process.env.HOME || __dirname, 'data/sessions');
+
+console.log('Auth file location:', AUTH_FILE);
+console.log('Sessions directory:', SESSIONS_PATH);
 
 // Middleware for session storage
 app.use(
   session({
     store: new FileStore({
-      path: './data/sessions', // Persistent session storage
+      path: SESSIONS_PATH, // Persistent session storage in a writable location
     }),
     secret: 'your-secret-key',
     resave: false,
@@ -26,11 +31,10 @@ app.use(
 
 const DROID_HOST = process.env.REACT_APP_DROID_HOST;
 const backendURL = 'http://' + DROID_HOST + ':3001';
-console.log ('backendURL', backendURL)
+console.log('backendURL', backendURL);
 
 // Enable CORS for the frontend
-// app.use(cors({ credentials: true, origin: {backendURL} }));
-app.use(cors({ credentials: true, origin: {backendURL} }));
+app.use(cors({ credentials: true, origin: backendURL }));
 app.use(bodyParser.json());
 
 // Create `auth.json` if it does not exist
@@ -85,15 +89,13 @@ app.post('/doLogout', (req, res) => {
     if (err) {
       return res.status(500).send({ message: 'Failed to log out' });
     }
-    res.clearCookie('connect.sid'); // Efface le cookie de session
+    res.clearCookie('connect.sid'); // Clear session cookie
     res.status(200).send({ message: 'Logout successful' });
   });
 });
 
-
 // Routes for the React App
 // Serve static files from the React app build directory
-// For any requests that don't match an API route or a static file, serve the React app index.html (handles routing on the frontend)
 app.use(express.static(path.join(__dirname, 'frontend/build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend/build/index.html'));
