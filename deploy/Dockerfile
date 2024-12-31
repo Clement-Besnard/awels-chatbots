@@ -1,34 +1,34 @@
-# Utiliser une image Node.js comme base
+# Base image
 FROM node:18
 
-# Définir le répertoire de travail
+# Define a non-root user with root group (gid 0)
+RUN groupadd -r appgroup && useradd -r -g appgroup -d /app -s /sbin/nologin appuser
+
+# Set the working directory
 WORKDIR /app
 
-# Copier et installer les dépendances pour le backend
-COPY ./backend/package*.json ./backend/
-COPY ./backend/server.js ./backend/
-COPY ./backend/auth/auth.json ./backend/auth/
+# Copy the application code
+COPY backend ./backend
+COPY frontend ./frontend
+COPY deploy ./deploy
 
-# Copier et installer les dépendances pour le frontend
-COPY ./frontend/public ./frontend/public/
-COPY ./frontend/src ./frontend/src/
-COPY ./frontend/package*.json ./frontend/
-COPY ./frontend/*.config.js ./frontend/
+# Fix permissions for OpenShift's random user uid with gid 0
+RUN chown -R appuser:0 /app && chmod -R g+rw /app
 
-# Construire le frontend
+# Switch to the non-root user
+USER appuser
+
+# Install dependencies and build the app
 RUN cd frontend && \
     npm install -D tailwindcss postcss autoprefixer && \
-    npx tailwindcss init
-RUN cd frontend && \
+    npx tailwindcss init && \
     npm run build
-
-# Construire le backend
 RUN cd backend && \
     ln -s ../frontend/ frontend && \
     npm install --production
 
-# Exposer les ports utilisés par le backend et le frontend
+# Expose the port
 EXPOSE 3001
 
-# Lancer simultanément le backend et un serveur pour le frontend
+# Start the app
 CMD ["sh", "-c", "node backend/server.js"]
