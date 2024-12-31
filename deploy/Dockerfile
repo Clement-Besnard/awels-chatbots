@@ -10,7 +10,7 @@ COPY frontend ./frontend
 COPY deploy ./deploy
 
 # Ensure /app/data directory exists and set proper permissions
-RUN mkdir -p /app/data && chmod -R 777 /app
+RUN mkdir -p /app/data && chmod -R 775 /app
 
 # Install dependencies and build the app
 RUN cd frontend && \
